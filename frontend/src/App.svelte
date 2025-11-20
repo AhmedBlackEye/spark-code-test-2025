@@ -2,15 +2,17 @@
   import Todo from "./lib/Todo.svelte";
   import type { TodoItem } from "./lib/types";
 
+  const API_URL = "http://localhost:8080";
+
   let todos: TodoItem[] = $state([]);
-  let newTodo: TodoItem = $state({
+  let newTodo: Omit<TodoItem, "id"> = $state({
     title: "",
     description: "",
   });
 
   async function fetchTodos() {
     try {
-      const response = await fetch("http://localhost:8080/");
+      const response = await fetch(API_URL);
       if (response.status !== 200) {
         console.error("Error fetching data. Response status not 200");
         return;
@@ -26,7 +28,7 @@
     event.preventDefault();
 
     try {
-      const response = await fetch("http://localhost:8080/", {
+      const response = await fetch(API_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newTodo),
@@ -35,6 +37,20 @@
       if (response.ok) {
         newTodo.title = "";
         newTodo.description = "";
+        await fetchTodos();
+      }
+    } catch (e) {
+      console.error("Could not connect to server. Ensure it is running.", e);
+    }
+  }
+
+  async function deleteTodo(id: number) {
+    try {
+      const response = await fetch(`${API_URL}/?id=${id}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
         await fetchTodos();
       }
     } catch (e) {
@@ -55,7 +71,7 @@
 
   <div class="todo-list">
     {#each todos as todo}
-      <Todo title={todo.title} description={todo.description} />
+      <Todo {...todo} onDelete={deleteTodo} />
     {/each}
   </div>
 

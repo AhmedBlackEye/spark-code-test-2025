@@ -1,7 +1,11 @@
 <script lang="ts">
   import type { TodoItem } from "./types";
 
-  const { title, description }: TodoItem = $props();
+  type Props = TodoItem & {
+    onDelete: (id: number) => void;
+  };
+
+  const { id, title, description, onDelete }: Props = $props();
 </script>
 
 <div class="todo">
@@ -9,6 +13,7 @@
     <p class="todo-title">{title}</p>
     <p class="todo-description">{description}</p>
   </div>
+  <button class="delete-btn" onclick={() => onDelete(id)}>Delete</button>
 </div>
 
 <style>
@@ -53,5 +58,20 @@
     color: #ddd;
 
     text-align: left;
+  }
+
+  .delete-btn {
+    background-color: #ff4d4d;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.2s;
+  }
+
+  .delete-btn:hover {
+    background-color: #cc0000;
   }
 </style>
