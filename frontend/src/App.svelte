@@ -5,27 +5,38 @@
   const API_URL = "http://localhost:8080";
 
   let todos: TodoItem[] = $state([]);
+  let errorMessage = $state("");
   let newTodo: Omit<TodoItem, "id"> = $state({
     title: "",
     description: "",
   });
 
   async function fetchTodos() {
+    errorMessage = "";
     try {
       const response = await fetch(API_URL);
       if (response.status !== 200) {
-        console.error("Error fetching data. Response status not 200");
+        errorMessage =
+          "We couldn't load your list. Please try refreshing the page.";
         return;
       }
 
       todos = await response.json();
     } catch (e) {
+      errorMessage = "Could not connect to server. Ensure it is running.";
       console.error("Could not connect to server. Ensure it is running.", e);
     }
   }
 
   async function addTodo(event: Event) {
     event.preventDefault();
+
+    errorMessage = "";
+
+    if (!newTodo.title.trim() || !newTodo.description.trim()) {
+      errorMessage = "Please fill in both the title and description.";
+      return;
+    }
 
     try {
       const response = await fetch(API_URL, {
@@ -38,13 +49,19 @@
         newTodo.title = "";
         newTodo.description = "";
         await fetchTodos();
+      } else {
+        errorMessage =
+          "Something went wrong adding the item. Please try again.";
       }
     } catch (e) {
+      errorMessage = "Could not connect to server. Ensure it is running.";
       console.error("Could not connect to server. Ensure it is running.", e);
     }
   }
 
   async function deleteTodo(id: number) {
+    errorMessage = "";
+
     try {
       const response = await fetch(`${API_URL}/?id=${id}`, {
         method: "DELETE",
@@ -52,8 +69,14 @@
 
       if (response.ok) {
         await fetchTodos();
+      } else if (response.status === 404) {
+        errorMessage = "Task wasn't found.";
+        await fetchTodos();
+      } else {
+        errorMessage = "Could not delete the item. Please try again.";
       }
     } catch (e) {
+      errorMessage = "Could not delete item.";
       console.error("Could not connect to server. Ensure it is running.", e);
     }
   }
@@ -85,6 +108,10 @@
     />
     <button>Add Todo</button>
   </form>
+
+  {#if errorMessage}
+    <p class="error-display">{errorMessage}</p>
+  {/if}
 </main>
 
 <style>
@@ -114,5 +141,15 @@
 
   .todo-list-form {
     margin-top: 10px;
+  }
+  .error-display {
+    color: #ff4d4d;
+    margin-top: 15px;
+    font-weight: bold;
+    font-size: 18px;
+    background: rgba(207, 175, 175, 0.2);
+    padding: 10px;
+    border-radius: 8px;
+    display: inline-block;
   }
 </style>
