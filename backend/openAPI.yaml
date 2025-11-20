@@ -34,6 +34,32 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/To-Do-List"
+    delete:
+      summary: Delete a To-Do by ID
+      operationId: deleteToDo
+      parameters:
+        - in: query
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: The ID of the Todo to delete
+    responses:
+      "200":
+        description: Todo successfully deleted
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: Todo deleted
+      "400":
+        description: Invalid or missing ID
+      "404":
+        description: Todo not found
+        
 components:
   schemas:
     To-Do-List:

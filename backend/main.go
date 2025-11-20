@@ -3,19 +3,22 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"sync"
 )
 
 const Port = "8080"
 
 type Todo struct {
+	Id          uint32 `json:"id"`
 	Title       string `json:"title" binding:"required"`
 	Description string `json:"description" binding:"required"`
 }
 
 var (
-	todos []Todo
-	mu    sync.Mutex
+	nextId uint32
+	todos  []Todo
+	mu     sync.Mutex
 )
 
 func main() {
@@ -40,6 +43,9 @@ func toDoListHandler(w http.ResponseWriter, r *http.Request) {
 
 	case http.MethodPost:
 		createTodo(w, r)
+
+	case http.MethodDelete:
+		deleteTodo(w, r)
 
 	default:
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
@@ -67,8 +73,34 @@ func createTodo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	mu.Lock()
+	item.Id = nextId
+	nextId++
 	todos = append(todos, item)
 	mu.Unlock()
 
 	json.NewEncoder(w).Encode(item)
+}
+
+func deleteTodo(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	idStr := r.URL.Query().Get("id")
+	id, err := strconv.ParseUint(idStr, 10, 32)
+	if err != nil {
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		return
+	}
+
+	mu.Lock()
+	defer mu.Unlock()
+
+	for i, t := range todos {
+		if t.Id == uint32(id) {
+			todos = append(todos[:i], todos[i+1:]...)
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(map[string]string{"message": "Todo deleted"})
+			return
+		}
+	}
+	http.Error(w, "Todo not found", http.StatusNotFound)
 }
