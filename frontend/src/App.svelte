@@ -3,6 +3,10 @@
   import type { TodoItem } from "./lib/types";
 
   let todos: TodoItem[] = $state([]);
+  let newTodo: TodoItem = $state({
+    title: "",
+    description: "",
+  });
 
   async function fetchTodos() {
     try {
@@ -13,6 +17,26 @@
       }
 
       todos = await response.json();
+    } catch (e) {
+      console.error("Could not connect to server. Ensure it is running.", e);
+    }
+  }
+
+  async function addTodo(event: Event) {
+    event.preventDefault();
+
+    try {
+      const response = await fetch("http://localhost:8080/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newTodo),
+      });
+
+      if (response.ok) {
+        newTodo.title = "";
+        newTodo.description = "";
+        await fetchTodos();
+      }
     } catch (e) {
       console.error("Could not connect to server. Ensure it is running.", e);
     }
@@ -36,9 +60,13 @@
   </div>
 
   <h2 class="todo-list-form-header">Add a Todo</h2>
-  <form class="todo-list-form">
-    <input placeholder="Title" name="title" />
-    <input placeholder="Description" name="description" />
+  <form class="todo-list-form" onsubmit={addTodo}>
+    <input placeholder="Title" bind:value={newTodo.title} name="title" />
+    <input
+      placeholder="Description"
+      bind:value={newTodo.description}
+      name="description"
+    />
     <button>Add Todo</button>
   </form>
 </main>
